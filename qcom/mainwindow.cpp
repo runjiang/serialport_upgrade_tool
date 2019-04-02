@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     startInit();
+    qDebug("startInit\r\n");
     myCom = NULL;
 
     ui->qter->setText(
@@ -109,6 +110,11 @@ void MainWindow::setComboBoxEnabled(bool status)
 //打开串口
 void MainWindow::on_actionOpen_triggered()
 {
+    qDebug("init xlink ptp");
+    if (Xlink_PTP_Init() != 0) {
+		qDebug("Xlink_PTP_Init error");
+	}
+
     QString portName = ui->portNameComboBox->currentText();   //获取串口名
 #ifdef Q_OS_LINUX
     myCom = new QextSerialPort("/dev/" + portName);
@@ -186,7 +192,6 @@ void MainWindow::on_actionOpen_triggered()
     ui->statusBar->showMessage(tr("打开串口成功"));
 }
 
-
 //关闭串口
 void MainWindow::on_actionClose_triggered()
 {
@@ -221,88 +226,6 @@ void MainWindow::on_actionAbout_triggered()
     ui->statusBar->showMessage(tr("关于Wincom"));
 }
 
-//读取数据
-void MainWindow::readMyCom()
-{
-    QByteArray temp = myCom->readAll();
-    QString buf;
-
-    if(!temp.isEmpty()){
-            ui->textBrowser->setTextColor(Qt::black);
-            if(ui->ccradioButton->isChecked()){
-                buf = temp;
-            }else if(ui->chradioButton->isChecked()){
-                QString str;
-                for(int i = 0; i < temp.count(); i++){
-                    QString s;
-                    s.sprintf("0x%02x, ", (unsigned char)temp.at(i));
-                    buf += s;
-                }
-            }
-
-        if(!write2fileName.isEmpty()){
-            QFile file(write2fileName);
-            //如果打开失败则给出提示并退出函数
-            if(!file.open(QFile::WriteOnly | QIODevice::Text)){
-                QMessageBox::warning(this, tr("写入文件"), tr("打开文件 %1 失败, 无法写入\n%2").arg(write2fileName).arg(file.errorString()), QMessageBox::Ok);
-                return;
-            }
-            QTextStream out(&file);
-            out<<buf;
-            file.close();
-        }
-
-        ui->textBrowser->setText(ui->textBrowser->document()->toPlainText() + buf);
-        QTextCursor cursor = ui->textBrowser->textCursor();
-        cursor.movePosition(QTextCursor::End);
-        ui->textBrowser->setTextCursor(cursor);
-
-        ui->recvbyteslcdNumber->display(ui->recvbyteslcdNumber->value() + temp.size());
-        ui->statusBar->showMessage(tr("成功读取%1字节数据").arg(temp.size()));
-    }
-}
-
-//发送数据
-void MainWindow::sendMsg()
-{
-    QByteArray buf;
-    if(ui->sendAsHexcheckBox->isChecked()){
-        QString str;
-        bool ok;
-        char data;
-        QStringList list;
-        str = ui->sendMsgLineEdit->text();
-        list = str.split(" ");
-        for(int i = 0; i < list.count(); i++){
-            if(list.at(i) == " ")
-                continue;
-            if(list.at(i).isEmpty())
-                continue;
-            data = (char)list.at(i).toInt(&ok, 16);
-            if(!ok){
-                QMessageBox::information(this, tr("提示消息"), tr("输入的数据格式有错误！"), QMessageBox::Ok);
-                if(obotimer != NULL)
-                    obotimer->stop();
-                ui->sendmsgBtn->setText(tr("发送"));
-                ui->sendmsgBtn->setIcon(QIcon(":new/prefix1/src/send.png"));
-                return;
-            }
-            buf.append(data);
-        }
-    }else{
-#if QT_VERSION < 0x050000
-        buf = ui->sendMsgLineEdit->text().toAscii();
-#else
-        buf = ui->sendMsgLineEdit->text().toLocal8Bit();
-#endif
-    }
-    //发送数据
-    myCom->write(buf);
-    ui->statusBar->showMessage(tr("发送数据成功"));
-    //界面控制
-    ui->textBrowser->setTextColor(Qt::lightGray);
-}
-
 //发送数据按钮
 void MainWindow::on_sendmsgBtn_clicked()
 {
@@ -310,7 +233,7 @@ void MainWindow::on_sendmsgBtn_clicked()
     if(ui->sendmsgBtn->text() == tr("暂停")){
         obotimer->stop();
         ui->sendmsgBtn->setText(tr("发送"));
-        ui->sendmsgBtn->setIcon(QIcon(":new/prefix1/src/send.png"));
+        ui->sendmsgBtn->setIcon(QIcon(":/images/send.png"));
         return;
     }
     //如果发送数据为空，给出提示并返回
@@ -327,7 +250,7 @@ void MainWindow::on_sendmsgBtn_clicked()
     }else{ //连续发送
         obotimer->start(obotimerdly);
         ui->sendmsgBtn->setText(tr("暂停"));
-        ui->sendmsgBtn->setIcon(QIcon(":new/prefix1/src/pause.png"));
+        ui->sendmsgBtn->setIcon(QIcon(":/images/pause.png"));
     }
 }
 //清空记录
@@ -336,8 +259,6 @@ void MainWindow::on_clearUpBtn_clicked()
     ui->textBrowser->clear();
     ui->statusBar->showMessage(tr("记录已经清空"));
 }
-
-
 
 //计数器清零
 void MainWindow::on_actionClearBytes_triggered()
@@ -487,3 +408,430 @@ void MainWindow::on_actionWriteToFile_triggered()
     }
 
 }
+
+
+//发送数据
+void MainWindow::sendMsg()
+{
+    QByteArray buf;
+    if(ui->sendAsHexcheckBox->isChecked()){
+        QString str;
+        bool ok;
+        char data;
+        QStringList list;
+        str = ui->sendMsgLineEdit->text();
+        list = str.split(" ");
+        for(int i = 0; i < list.count(); i++){
+            if(list.at(i) == " ")
+                continue;
+            if(list.at(i).isEmpty())
+                continue;
+            data = (char)list.at(i).toInt(&ok, 16);
+            if(!ok){
+                QMessageBox::information(this, tr("提示消息"), tr("输入的数据格式有错误！"), QMessageBox::Ok);
+                if(obotimer != NULL)
+                    obotimer->stop();
+                ui->sendmsgBtn->setText(tr("发送"));
+                ui->sendmsgBtn->setIcon(QIcon(":/images/send.png"));
+                return;
+            }
+            buf.append(data);
+        }
+    }else{
+#if QT_VERSION < 0x050000
+        buf = ui->sendMsgLineEdit->text().toAscii();
+#else
+        buf = ui->sendMsgLineEdit->text().toLocal8Bit();
+#endif
+    }
+    //发送数据
+    myCom->write(buf);
+    ui->statusBar->showMessage(tr("发送数据成功"));
+    //界面控制
+    ui->textBrowser->setTextColor(Qt::lightGray);
+}
+
+//读取数据
+void MainWindow::readMyCom()
+{
+    QByteArray temp = myCom->readAll();
+    QString buf;
+
+    if(!temp.isEmpty()){
+
+        Xlink_PassThroughProtolPutData(&ptppkt, (unsigned char*)temp.data(), temp.length());
+
+        ui->textBrowser->setTextColor(Qt::black);
+        if(ui->ccradioButton->isChecked()){
+            buf = temp;
+        }else if(ui->chradioButton->isChecked()){
+            QString str;
+            for(int i = 0; i < temp.count(); i++){
+                QString s;
+                s.sprintf("0x%02x, ", (unsigned char)temp.at(i));
+                buf += s;
+            }
+        }
+
+        if(!write2fileName.isEmpty()){
+            QFile file(write2fileName);
+            //如果打开失败则给出提示并退出函数
+            if(!file.open(QFile::WriteOnly | QIODevice::Text)){
+                QMessageBox::warning(this, tr("写入文件"), tr("打开文件 %1 失败, 无法写入\n%2").arg(write2fileName).arg(file.errorString()), QMessageBox::Ok);
+                return;
+            }
+            QTextStream out(&file);
+            out<<buf;
+            file.close();
+        }
+
+        ui->textBrowser->setText(ui->textBrowser->document()->toPlainText() + buf);
+        QTextCursor cursor = ui->textBrowser->textCursor();
+        cursor.movePosition(QTextCursor::End);
+        ui->textBrowser->setTextCursor(cursor);
+
+        ui->recvbyteslcdNumber->display(ui->recvbyteslcdNumber->value() + temp.size());
+        ui->statusBar->showMessage(tr("成功读取%1字节数据").arg(temp.size()));
+    }
+}
+
+int MainWindow::XlinkUartSend(QextSerialPort *myCom, unsigned char * Buffer, unsigned short BufferLen)
+{
+	int ret = -1;
+    //QByteArray buf;
+    //buf.append(data);
+    //发送数据
+    ret = myCom->write((const char*)Buffer, BufferLen);
+	return ret;
+}
+
+void MainWindow::xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt)
+{
+	qDebug("rec one packet ........\r\n");
+	XLINK_CMD_VALUE cmd_value;
+	unsigned char temp;
+
+	if(pkt == NULL)return;
+	if(pkt->en == 0)return;
+
+    cmd_value = (XLINK_CMD_VALUE)pkt->cmd;
+
+    qDebug("get cmd value=%02x(HEX),datalen=%d\r\n",cmd_value,pkt->datalen);
+
+	switch(cmd_value){
+			case XLINK_PTR_CHECK_MAC:  //mcu check wifi mac
+                 //xlink_getmac_resp();
+				 break;
+			case XLINK_PTR_CHECK_NET:  //mcu check wifi net
+                 //xlink_getwifi_status_resp();
+				 break;
+			case XLINK_PTR_CHECK_PIDKEY: //mcu check wifi pid and key
+                 //xlink_get_pidkey_resp();
+				 break;
+			case XLINK_PTR_SET_PIDKEY:  //mcu set wifi pid and key
+                 //xlink_set_pidkey_resp(pkt);
+				 break;
+			case XLINK_PTR_ENTER_SMARTLINK: // mcu set wifi into smartlink
+                 //xlink_enter_smartlink_resp();
+				 break;
+
+			case XLINK_PTR_REBOOT_WIFI:   //mcu reboot wifi
+                //xlink_reboot_wifi_resp();
+				break;
+
+			case XLINK_PTR_REPASS_WIFI:  //mcu repass wifi
+                //xlink_repass_wifi_resp();
+				break;
+			case XLINK_PTR_CHECK_WIFI_VER:   //mcu check wifi version
+                //xlink_getwifi_ver_resp();
+				break;
+			case XLINK_PTR_GET_WIFI_TIME:   //mcu get wifi time
+                //xlink_getwifi_time_resp();
+				break;
+			case XLINK_PTR_SET_APSTA_MODE:  //mcu set wifi in visiable
+				break;
+			case XLINK_PTR_AP_SMARTLINK_STATUS:  //mcu return data to app
+				 break;
+
+			case XLINK_PTR_CHECK_SN: //mcu check wifi sn
+                 //xlink_get_sn_resp();
+				 break;
+			case XLINK_PTR_SET_SN:	//mcu set wifi sn
+                // xlink_set_sn_resp(pkt);
+				 break;
+
+			case XLINK_PTR_CHECK_APSTA_MODE: //mcu check wifi apsta mode and wifi strength
+                 //xlink_checkwifi_sta_or_ap_resp();
+				 break;
+
+			case XLINK_PTR_WIFI_TO_MCU_TRAN_T:
+				break;
+			case XLINK_PTR_MCU_TO_WIFI_TRAN_T:   //mcu transfer passthrough data to wifi
+				//xlink_mcu_to_wifi_passthrough_resp(pkt);
+				break;
+			case XLINK_PTR_WIFI_TO_MCU_TRAN_DP:
+				break;
+			case XLINK_PTR_MCU_TO_WIFI_TRAN_DP:  //mcu transfer datapoints data to wifi
+                //xlink_mcu_to_wifi_dp_process(pkt);
+				break;
+			case XLINK_PTR_MCU_TO_WIFI_TRAN_ALLDP:  //mcu tranfer all datapoints data to wifi and for web refresh
+               //xlink_mcu_to_wifi_alldp_process(pkt);
+				break;
+
+			case XLINK_PTR_MCU_TO_WIFI_TRAN_ALLDP_NO_ALARM:  //mcu transfer datapoints data to wifi
+                //xlink_mcu_to_wifi_no_alarm_dp_process(pkt);
+				break;
+
+			case XLINK_PTP_GET_MCU_VER:
+                //xlink_get_mcu_ver();
+				break;
+
+			case XLINK_PTP_SET_MCU_VER:
+                //xlink_set_mcu_ver(pkt);
+				break;
+
+			case XLINK_PTR_CHECK_OTA:  //mcu check whether new version ota bin or not.
+			{
+			    qDebug("get mcu uart cmd check ota 0x30\r\n");
+                //xlink_check_ota(pkt);
+                break;
+			}
+			case XLINK_PTR_ASK_OTA:  //mcu ask wifi for excuting an ota task
+            {
+                qDebug("get mcu uart cmd ask wifi ota 0x31\r\n");
+                //xlink_ask_ota(pkt);
+                break;
+			}
+			case XLINK_PTR_HF_SEND_OTA: //wifi send the ota bin to mcu
+			{
+                qDebug("get mcu uart cmd send the ota bin to mcu 0x32\r\n");
+               // xlink_send_ota_bin(pkt);
+				break;
+			 }
+			case XLINK_PTR_Finish_OTA:	//wifi finish send the ota bin
+			{
+				qDebug("get mcu uart cmd response wifi finish send ota bin 0x33\r\n");
+                //xlink_finish_ota_bin();
+				break;
+			}
+			case XLINK_PTR_ANSWER_OTA: // MCU tell wifi the ota result
+			{
+			    qDebug("get mcu uart cmd the ota task 0x34\r\n");
+				break;
+			}
+
+			case XLINK_PTR_ENABLE_PAIRING:
+			{
+                //xlink_mcu_enable_pairing_pkt_process(pkt);
+				break;
+			}
+			case XLINK_PTR_ENABLE_SUBSCRIBE:
+			{
+                //xlink_mcu_enable_subscribe_pkt_process(pkt);
+				break;
+			}
+			case XLINK_PTR_CHECK_PINGCODE: //mcu check wifi pingcode
+                 //xlink_get_pingcode_resp();
+				 break;
+			case XLINK_PTR_SET_PINGCODE:	//mcu set wifi pingcode
+                 //xlink_set_pingcode_resp(pkt);
+				 break;
+			default:
+				break;
+	}
+}
+
+int MainWindow::Xlink_PassThroughProtolInit(XLINK_PASSTHROUGHPROTOCOL *PTP_pck)
+{
+	if(PTP_pck->PacketCallBack == NULL)return -1;
+	if(PTP_pck->pktbuf == NULL)return -2;
+	if(PTP_pck->pktbuflen < 7)return -3;
+	PTP_pck->pktpos = 0;
+	return 0;
+}
+
+int MainWindow::Xlink_PTP_Init(void)
+{
+    pkt.PacketSend		= XlinkUartSend;
+	ptppkt.pkt			= &pkt;
+	ptppkt.pktbuf		= xlink_pktbuf;
+	ptppkt.pktbuflen	= PACKAGE_BUF_LEN;
+	ptppkt.pktpos		= 0;
+    ptppkt.PacketCallBack = xlink_PacketCallBack;
+
+	return Xlink_PassThroughProtolInit(&ptppkt);
+}
+
+void MainWindow::Xlink_PassThroughProtolPutData(XLINK_PASSTHROUGHPROTOCOL *PTP_pck,unsigned char *data,unsigned short datalen)
+{
+	unsigned short i = 0;
+	for (i = 0; i < datalen; i++) {
+		if(PTP_pck->pktpos >= PTP_pck->pktbuflen) {
+			PTP_pck->pktpos = 0;
+			PTP_pck->pktbuf[0] = 0;
+		}
+		if((PTP_pck->pktpos >= 2) && (PTP_pck->pktbuf[0] == XLINK_PTP_HEAD)) {
+			PTP_pck->pktlentmp = PTP_pck->pktbuf[1];
+			PTP_pck->pktlentmp <<= 8;
+			PTP_pck->pktlentmp += PTP_pck->pktbuf[2];
+		}
+		else {
+			PTP_pck->pktlentmp = 0;
+		}
+		switch(data[i]) {
+			case XLINK_PTP_HEAD:
+				PTP_pck->pktpos = 0;
+				PTP_pck->pktbuf[PTP_pck->pktpos++] = XLINK_PTP_HEAD;
+				break;
+			case XLINK_PTP_TAIL:
+				if((PTP_pck->pktpos >= 5) && (PTP_pck->pktbuf[0] == XLINK_PTP_HEAD)) {
+					//a packet
+					PTP_pck->pkt->alldatalen = PTP_pck->pktbuf[1];
+					PTP_pck->pkt->alldatalen <<= 8;
+					PTP_pck->pkt->alldatalen += PTP_pck->pktbuf[2];
+					if(PTP_pck->pkt->alldatalen == (PTP_pck->pktpos - 3)) {
+						PTP_pck->pkt->cmd = PTP_pck->pktbuf[3];
+						PTP_pck->pkt->datalen = PTP_pck->pkt->alldatalen - 2;
+						if (PTP_pck->pkt->datalen > 0) {
+							PTP_pck->pkt->data = &PTP_pck->pktbuf[4];
+						}
+						else {
+							PTP_pck->pkt->data = NULL;
+						}
+						if(PTP_pck->pktbuf[PTP_pck->pktpos -1] == Xlink_PassThroughProtolBuildXor(0,&PTP_pck->pktbuf[1],PTP_pck->pktpos -2)) {
+							PTP_pck->pkt->en = 1;
+							PTP_pck->PacketCallBack(PTP_pck->pkt);
+						}
+					}
+				}
+				PTP_pck->pktpos = 0;
+				PTP_pck->pktbuf[0] = 0;
+				break;
+			case XLINK_PTP_CHANGE:
+				if((PTP_pck->pktpos >= 1) && (PTP_pck->pktbuf[0] == XLINK_PTP_HEAD)) {
+					 PTP_pck->pktbuf[PTP_pck->pktpos - 1] |= XLINK_PTP_OR;
+				}
+				else {
+					PTP_pck->pktpos = 0;
+					PTP_pck->pktbuf[0] = 0;
+				}
+				break;
+			default:
+				if((PTP_pck->pktpos >= 0) && (PTP_pck->pktbuf[0] == XLINK_PTP_HEAD)) {
+					 PTP_pck->pktbuf[PTP_pck->pktpos++] = data[i];
+				}
+				else {
+					PTP_pck->pktpos = 0;
+					PTP_pck->pktbuf[0] = 0;
+				}
+				break;
+		}
+	}
+}
+
+void MainWindow::Xlink_PassThroughProtolBuildSendData(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt)
+{
+	unsigned char tmp = 0,res = 0;
+	unsigned short i = 0;
+
+	pkt->PacketSend = XlinkUartSend;
+	if(pkt->en == 0)return;
+	if(pkt->PacketSend == NULL)return;
+
+	tmp = XLINK_PTP_HEAD;
+    pkt->PacketSend(myCom,&tmp,1);
+
+	tmp = pkt->alldatalen >> 8;
+	res = Xlink_PassThroughProtolBuildXor(res,&tmp,1);
+	if((tmp == XLINK_PTP_HEAD) || (tmp == XLINK_PTP_CHANGE) || (tmp == XLINK_PTP_TAIL)) {
+		tmp = tmp & 0x7f;
+        pkt->PacketSend(myCom,&tmp,1);
+		tmp = XLINK_PTP_CHANGE;
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+	else {
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+
+	tmp = pkt->alldatalen >> 0;
+	res = Xlink_PassThroughProtolBuildXor(res,&tmp,1);
+	if((tmp == XLINK_PTP_HEAD) || (tmp == XLINK_PTP_CHANGE) || (tmp == XLINK_PTP_TAIL)) {
+		tmp = tmp & 0x7f;
+        pkt->PacketSend(myCom,&tmp,1);
+		tmp = XLINK_PTP_CHANGE;
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+	else {
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+
+	tmp = pkt->cmd;
+	res = Xlink_PassThroughProtolBuildXor(res,&tmp,1);
+	if((tmp == XLINK_PTP_HEAD) || (tmp == XLINK_PTP_CHANGE) || (tmp == XLINK_PTP_TAIL)) {
+		tmp = tmp & 0x7f;
+        pkt->PacketSend(myCom,&tmp,1);
+		tmp = XLINK_PTP_CHANGE;
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+	else {
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+
+	for(i = 0; i < pkt->datalen; i++) {
+		res = Xlink_PassThroughProtolBuildXor(res,&pkt->data[i],1);
+		switch(pkt->data[i]) {
+			case XLINK_PTP_HEAD:
+				tmp = XLINK_PTP_HEAD & 0x7f;
+                pkt->PacketSend(myCom,&tmp,1);
+				tmp = XLINK_PTP_CHANGE;
+                pkt->PacketSend(myCom,&tmp,1);
+				break;
+			case XLINK_PTP_CHANGE:
+				tmp = XLINK_PTP_CHANGE & 0x7f;
+                pkt->PacketSend(myCom,&tmp,1);
+				tmp = XLINK_PTP_CHANGE;
+                pkt->PacketSend(myCom,&tmp,1);
+				break;
+			case XLINK_PTP_TAIL:
+				tmp = XLINK_PTP_TAIL & 0x7f;
+                pkt->PacketSend(myCom,&tmp,1);
+				tmp = XLINK_PTP_CHANGE;
+                pkt->PacketSend(myCom,&tmp,1);
+				break;
+			default:
+                pkt->PacketSend(myCom,&pkt->data[i],1);
+				break;
+		}
+	}
+
+	tmp =res;
+	if((tmp == XLINK_PTP_HEAD) || (tmp == XLINK_PTP_CHANGE) || (tmp == XLINK_PTP_TAIL)) {
+		tmp = tmp & 0x7f;
+        pkt->PacketSend(myCom,&tmp,1);
+		tmp = XLINK_PTP_CHANGE;
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+	else {
+        pkt->PacketSend(myCom,&tmp,1);
+	}
+
+	tmp = XLINK_PTP_TAIL;
+    pkt->PacketSend(myCom,&tmp,1);
+}
+
+
+
+unsigned char MainWindow::Xlink_PassThroughProtolBuildXor(unsigned char resold,unsigned char *data,unsigned int datalen)
+{
+	unsigned char res = 0;
+	unsigned int  i = 0;
+	res = resold;
+	for(i = 0; i < datalen; i++) {
+		res ^=data[i];
+	}
+	return res;
+}
+
+
+
+

@@ -68,6 +68,12 @@ public:
     QCheckBox *obocheckBox;
     QLabel *label_6;
     QSpinBox *delayspinBox;
+    QGroupBox *groupBox_3;
+    QHBoxLayout *horizontalLayout_3;
+    QSpacerItem *horizontalSpacer;
+    QLabel *label_7;
+    QLabel *qter;
+    QSpacerItem *horizontalSpacer_2;
     QGroupBox *groupBox_2;
     QVBoxLayout *verticalLayout_2;
     QFrame *frame_3;
@@ -78,16 +84,17 @@ public:
     QPushButton *clearUpBtn;
     QTextBrowser *textBrowser;
     QGroupBox *groupBox_4;
-    QHBoxLayout *horizontalLayout_2;
-    QCheckBox *sendAsHexcheckBox;
+    QGridLayout *gridLayout_2;
+    QLabel *label_8;
+    QLabel *label_9;
+    QPushButton *pushButton;
+    QLabel *label_10;
     QLineEdit *sendMsgLineEdit;
     QPushButton *sendmsgBtn;
-    QGroupBox *groupBox_3;
-    QHBoxLayout *horizontalLayout_3;
-    QSpacerItem *horizontalSpacer;
-    QLabel *label_7;
-    QLabel *qter;
-    QSpacerItem *horizontalSpacer_2;
+    QCheckBox *sendAsHexcheckBox;
+    QLineEdit *lineEdit_2;
+    QLineEdit *lineEdit;
+    QPushButton *pushButton_2;
     QMenuBar *menuBar;
     QMenu *menu;
     QMenu *menu_2;
@@ -311,6 +318,45 @@ public:
 
         gridLayout->addWidget(groupBox, 0, 0, 2, 1);
 
+        groupBox_3 = new QGroupBox(centralWidget);
+        groupBox_3->setObjectName(QString::fromUtf8("groupBox_3"));
+        sizePolicy.setHeightForWidth(groupBox_3->sizePolicy().hasHeightForWidth());
+        groupBox_3->setSizePolicy(sizePolicy);
+        groupBox_3->setMinimumSize(QSize(0, 60));
+        groupBox_3->setMaximumSize(QSize(16777215, 60));
+        groupBox_3->setStyleSheet(QString::fromUtf8(""));
+        groupBox_3->setFlat(true);
+        horizontalLayout_3 = new QHBoxLayout(groupBox_3);
+        horizontalLayout_3->setSpacing(7);
+        horizontalLayout_3->setContentsMargins(11, 11, 11, 11);
+        horizontalLayout_3->setObjectName(QString::fromUtf8("horizontalLayout_3"));
+        horizontalLayout_3->setContentsMargins(-1, -1, -1, 1);
+        horizontalSpacer = new QSpacerItem(258, 19, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_3->addItem(horizontalSpacer);
+
+        label_7 = new QLabel(groupBox_3);
+        label_7->setObjectName(QString::fromUtf8("label_7"));
+        label_7->setMinimumSize(QSize(0, 30));
+        label_7->setPixmap(QPixmap(QString::fromUtf8(":/images/logo42-22.png")));
+
+        horizontalLayout_3->addWidget(label_7);
+
+        qter = new QLabel(groupBox_3);
+        qter->setObjectName(QString::fromUtf8("qter"));
+        sizePolicy.setHeightForWidth(qter->sizePolicy().hasHeightForWidth());
+        qter->setSizePolicy(sizePolicy);
+        qter->setOpenExternalLinks(true);
+
+        horizontalLayout_3->addWidget(qter);
+
+        horizontalSpacer_2 = new QSpacerItem(258, 19, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_3->addItem(horizontalSpacer_2);
+
+
+        gridLayout->addWidget(groupBox_3, 2, 0, 1, 2);
+
         groupBox_2 = new QGroupBox(centralWidget);
         groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
         groupBox_2->setStyleSheet(QString::fromUtf8(""));
@@ -370,28 +416,40 @@ public:
 
         verticalLayout_2->addWidget(textBrowser);
 
-
-        gridLayout->addWidget(groupBox_2, 0, 1, 1, 1);
-
-        groupBox_4 = new QGroupBox(centralWidget);
+        groupBox_4 = new QGroupBox(groupBox_2);
         groupBox_4->setObjectName(QString::fromUtf8("groupBox_4"));
         groupBox_4->setStyleSheet(QString::fromUtf8(""));
         groupBox_4->setFlat(true);
-        horizontalLayout_2 = new QHBoxLayout(groupBox_4);
-        horizontalLayout_2->setSpacing(6);
-        horizontalLayout_2->setContentsMargins(11, 11, 11, 11);
-        horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
-        sendAsHexcheckBox = new QCheckBox(groupBox_4);
-        sendAsHexcheckBox->setObjectName(QString::fromUtf8("sendAsHexcheckBox"));
+        gridLayout_2 = new QGridLayout(groupBox_4);
+        gridLayout_2->setSpacing(6);
+        gridLayout_2->setContentsMargins(11, 11, 11, 11);
+        gridLayout_2->setObjectName(QString::fromUtf8("gridLayout_2"));
+        label_8 = new QLabel(groupBox_4);
+        label_8->setObjectName(QString::fromUtf8("label_8"));
 
-        horizontalLayout_2->addWidget(sendAsHexcheckBox);
+        gridLayout_2->addWidget(label_8, 0, 1, 1, 1);
+
+        label_9 = new QLabel(groupBox_4);
+        label_9->setObjectName(QString::fromUtf8("label_9"));
+
+        gridLayout_2->addWidget(label_9, 2, 1, 1, 1);
+
+        pushButton = new QPushButton(groupBox_4);
+        pushButton->setObjectName(QString::fromUtf8("pushButton"));
+
+        gridLayout_2->addWidget(pushButton, 2, 8, 1, 1);
+
+        label_10 = new QLabel(groupBox_4);
+        label_10->setObjectName(QString::fromUtf8("label_10"));
+
+        gridLayout_2->addWidget(label_10, 0, 6, 1, 1);
 
         sendMsgLineEdit = new QLineEdit(groupBox_4);
         sendMsgLineEdit->setObjectName(QString::fromUtf8("sendMsgLineEdit"));
         sendMsgLineEdit->setMaxLength(10000);
         sendMsgLineEdit->setDragEnabled(false);
 
-        horizontalLayout_2->addWidget(sendMsgLineEdit);
+        gridLayout_2->addWidget(sendMsgLineEdit, 0, 7, 1, 1);
 
         sendmsgBtn = new QPushButton(groupBox_4);
         sendmsgBtn->setObjectName(QString::fromUtf8("sendmsgBtn"));
@@ -402,49 +460,33 @@ public:
         sendmsgBtn->setIcon(icon11);
         sendmsgBtn->setAutoDefault(false);
 
-        horizontalLayout_2->addWidget(sendmsgBtn);
+        gridLayout_2->addWidget(sendmsgBtn, 0, 8, 1, 1);
+
+        sendAsHexcheckBox = new QCheckBox(groupBox_4);
+        sendAsHexcheckBox->setObjectName(QString::fromUtf8("sendAsHexcheckBox"));
+
+        gridLayout_2->addWidget(sendAsHexcheckBox, 0, 0, 1, 1);
+
+        lineEdit_2 = new QLineEdit(groupBox_4);
+        lineEdit_2->setObjectName(QString::fromUtf8("lineEdit_2"));
+
+        gridLayout_2->addWidget(lineEdit_2, 0, 2, 1, 1);
+
+        lineEdit = new QLineEdit(groupBox_4);
+        lineEdit->setObjectName(QString::fromUtf8("lineEdit"));
+
+        gridLayout_2->addWidget(lineEdit, 2, 2, 1, 1);
+
+        pushButton_2 = new QPushButton(groupBox_4);
+        pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
+
+        gridLayout_2->addWidget(pushButton_2, 3, 8, 1, 1);
 
 
-        gridLayout->addWidget(groupBox_4, 1, 1, 1, 1);
-
-        groupBox_3 = new QGroupBox(centralWidget);
-        groupBox_3->setObjectName(QString::fromUtf8("groupBox_3"));
-        sizePolicy.setHeightForWidth(groupBox_3->sizePolicy().hasHeightForWidth());
-        groupBox_3->setSizePolicy(sizePolicy);
-        groupBox_3->setMinimumSize(QSize(0, 60));
-        groupBox_3->setMaximumSize(QSize(16777215, 60));
-        groupBox_3->setStyleSheet(QString::fromUtf8(""));
-        groupBox_3->setFlat(true);
-        horizontalLayout_3 = new QHBoxLayout(groupBox_3);
-        horizontalLayout_3->setSpacing(7);
-        horizontalLayout_3->setContentsMargins(11, 11, 11, 11);
-        horizontalLayout_3->setObjectName(QString::fromUtf8("horizontalLayout_3"));
-        horizontalLayout_3->setContentsMargins(-1, -1, -1, 1);
-        horizontalSpacer = new QSpacerItem(258, 19, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        horizontalLayout_3->addItem(horizontalSpacer);
-
-        label_7 = new QLabel(groupBox_3);
-        label_7->setObjectName(QString::fromUtf8("label_7"));
-        label_7->setMinimumSize(QSize(0, 30));
-        label_7->setPixmap(QPixmap(QString::fromUtf8(":/images/logo42-22.png")));
-
-        horizontalLayout_3->addWidget(label_7);
-
-        qter = new QLabel(groupBox_3);
-        qter->setObjectName(QString::fromUtf8("qter"));
-        sizePolicy.setHeightForWidth(qter->sizePolicy().hasHeightForWidth());
-        qter->setSizePolicy(sizePolicy);
-        qter->setOpenExternalLinks(true);
-
-        horizontalLayout_3->addWidget(qter);
-
-        horizontalSpacer_2 = new QSpacerItem(258, 19, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        horizontalLayout_3->addItem(horizontalSpacer_2);
+        verticalLayout_2->addWidget(groupBox_4);
 
 
-        gridLayout->addWidget(groupBox_3, 2, 0, 1, 2);
+        gridLayout->addWidget(groupBox_2, 0, 1, 1, 1);
 
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
@@ -618,6 +660,15 @@ public:
 
         obocheckBox->setText(QApplication::translate("MainWindow", "\350\277\236\347\273\255\345\217\221\351\200\201", nullptr));
         label_6->setText(QApplication::translate("MainWindow", "\351\227\264\351\232\224(\346\257\253\347\247\222)", nullptr));
+        groupBox_3->setTitle(QString());
+        label_7->setText(QString());
+#ifndef QT_NO_TOOLTIP
+        qter->setToolTip(QApplication::translate("MainWindow", "\346\254\242\350\277\216\350\256\277\351\227\256\346\210\221\344\273\254\347\232\204\347\275\221\347\253\231", nullptr));
+#endif // QT_NO_TOOLTIP
+#ifndef QT_NO_STATUSTIP
+        qter->setStatusTip(QApplication::translate("MainWindow", "\346\254\242\350\277\216\350\256\277\351\227\256\346\210\221\344\273\254\347\232\204\347\275\221\347\253\231", nullptr));
+#endif // QT_NO_STATUSTIP
+        qter->setText(QApplication::translate("MainWindow", "www.qter.org", nullptr));
         groupBox_2->setTitle(QApplication::translate("MainWindow", "\346\216\245\346\224\266\346\225\260\346\215\256", nullptr));
 #ifndef QT_NO_TOOLTIP
         ccradioButton->setToolTip(QApplication::translate("MainWindow", "<html><head/><body><p>\344\273\245\345\255\227\347\254\246\346\226\271\345\274\217\346\230\276\347\244\272\346\225\260\346\215\256</p></body></html>", nullptr));
@@ -632,20 +683,16 @@ public:
 #endif // QT_NO_TOOLTIP
         clearUpBtn->setText(QApplication::translate("MainWindow", "\346\270\205\347\251\272\346\230\276\347\244\272", nullptr));
         groupBox_4->setTitle(QApplication::translate("MainWindow", "\345\217\221\351\200\201\346\225\260\346\215\256", nullptr));
+        label_8->setText(QApplication::translate("MainWindow", "  \345\275\223\345\211\215\347\211\210\346\234\254", nullptr));
+        label_9->setText(QApplication::translate("MainWindow", "    \346\240\207\350\257\206\347\254\246", nullptr));
+        pushButton->setText(QApplication::translate("MainWindow", "\346\243\200\346\265\213\350\256\276\345\244\207", nullptr));
+        label_10->setText(QApplication::translate("MainWindow", "   \346\225\260\346\215\256\345\214\205\351\225\277\345\272\246", nullptr));
+        sendmsgBtn->setText(QApplication::translate("MainWindow", "\345\217\221\351\200\201", nullptr));
 #ifndef QT_NO_TOOLTIP
         sendAsHexcheckBox->setToolTip(QApplication::translate("MainWindow", "<html><head/><body><p>\344\273\245\345\215\201\345\205\255\350\277\233\345\210\266\346\226\271\345\274\217\345\217\221\351\200\201\346\225\260\346\215\256\357\274\210\351\273\230\350\256\244\344\270\272\345\255\227\347\254\246\346\226\271\345\274\217\357\274\211</p></body></html>", nullptr));
 #endif // QT_NO_TOOLTIP
         sendAsHexcheckBox->setText(QApplication::translate("MainWindow", "\345\215\201\345\205\255\350\277\233\345\210\266\345\217\221\351\200\201", nullptr));
-        sendmsgBtn->setText(QApplication::translate("MainWindow", "\345\217\221\351\200\201", nullptr));
-        groupBox_3->setTitle(QString());
-        label_7->setText(QString());
-#ifndef QT_NO_TOOLTIP
-        qter->setToolTip(QApplication::translate("MainWindow", "\346\254\242\350\277\216\350\256\277\351\227\256\346\210\221\344\273\254\347\232\204\347\275\221\347\253\231", nullptr));
-#endif // QT_NO_TOOLTIP
-#ifndef QT_NO_STATUSTIP
-        qter->setStatusTip(QApplication::translate("MainWindow", "\346\254\242\350\277\216\350\256\277\351\227\256\346\210\221\344\273\254\347\232\204\347\275\221\347\253\231", nullptr));
-#endif // QT_NO_STATUSTIP
-        qter->setText(QApplication::translate("MainWindow", "www.qter.org", nullptr));
+        pushButton_2->setText(QApplication::translate("MainWindow", "\351\207\215\345\220\257\350\256\276\345\244\207", nullptr));
         menu->setTitle(QApplication::translate("MainWindow", "\346\223\215\344\275\234(&C)", nullptr));
         menu_2->setTitle(QApplication::translate("MainWindow", "\345\205\263\344\272\216(&A)", nullptr));
     } // retranslateUi
