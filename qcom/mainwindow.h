@@ -106,10 +106,11 @@ typedef enum{
 
 
 typedef enum{
+        XLINK_MCU_UPGRADE_STATE_IDILE = 0,
 		XLINK_MCU_SEND_CHECK_OTA_STATE = 0X30, //mcu check whether new version ota bin or not.
 		XLINK_MCU_ASK_OTA_STATE = 0x31,      //mcu ask wifi for excuting an ota task
 		XLINK_WIFI_SEND_OTA_STATE = 0x32,   //wifi send the ota bin to mcu
-		XLINK_WIFI_SEND_Finish_OTA_STATE= 0x33,     //wifi finish the ota task
+		XLINK_WIFI_SEND_FINISH_OTA_STATE= 0x33,     //wifi finish the ota task
 		XLINK_MCU_SEND_OTA_FINISH_STATE = 0x34,   //MCU tell wifi mcu ota finish
 }XLINK_MCU_UPGRADE_STATE;
 
@@ -143,6 +144,14 @@ private:
     XLINK_PASSTHROUGHPROTOCOL ptppkt;
     unsigned char xlink_pktbuf[PACKAGE_BUF_LEN];
     XLINK_MCU_UPGRADE_STATE mcu_upgradeState;
+    unsigned short mcuCurVersion;
+    unsigned short mcuNewVersion;
+    unsigned int mcuOtaIdentify;
+    unsigned short mcuOtaPktLength;
+	unsigned int   mcuBinSize;
+	unsigned char  mcuBinMd5[16];
+	unsigned short mcuBinOrderNumber;
+	QString curMcuBinFileName;
 
 private slots:
 
@@ -160,17 +169,28 @@ private slots:
     void on_actionOpen_triggered();
     void on_clearUpBtn_clicked();
     void on_sendmsgBtn_clicked();
+    void on_checkDeviceButton_clicked();
+    void on_deviceRebootButton_clicked();
+    void on_mcuUpgradeButton_clicked();
+    void on_getPidPkeyButton_clicked();
+    void on_getWifiMACButton_clicked();
     void readMyCom();
     void sendMsg();
     //end by
-
+    void showString(QString buf);
     static int XlinkUartSend(QextSerialPort *myCom, unsigned char * Buffer, unsigned short BufferLen);
-    static void xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt);
+    void xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt);
     int Xlink_PassThroughProtolInit(XLINK_PASSTHROUGHPROTOCOL *PTP_pck);
     int Xlink_PTP_Init(void);
     void Xlink_PassThroughProtolPutData(XLINK_PASSTHROUGHPROTOCOL *PTP_pck,unsigned char *data,unsigned short datalen);
     void Xlink_PassThroughProtolBuildSendData(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt);
     unsigned char Xlink_PassThroughProtolBuildXor(unsigned char resold,unsigned char *data,unsigned int datalen);
+    void xlink_mcu_send_check_ota_cmd(unsigned short version, unsigned int identify);
+	void xlink_mcu_send_excute_ota_cmd(unsigned char packetLen);
+	void xlink_mcu_send_finish_ota_cmd(unsigned short oldversion,unsigned short newversion, unsigned int identify);
+	void witePacketToBinFile(unsigned char *data, unsigned char data_len);
+    QString fileMd5(const QString &sourceFilePath);
+    void on_upgradeProgressBar_valueChanged(int value);
 };
 
 #endif // MAINWINDOW_H

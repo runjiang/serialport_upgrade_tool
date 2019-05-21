@@ -1,7 +1,11 @@
 #include <QDebug>
-
+#include <QDir>
+#include <QFile>    
+#include <QCryptographicHash>
+#include <QtGlobal>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "qglobal.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -12,8 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     qDebug("startInit\r\n");
     myCom = NULL;
 
-    ui->qter->setText(
-            tr("<a href=\"http://www.qter.org\">www.qter.org</a>"));
+    //ui->qter->setText(
+    //       tr("<a href=\"http://www.qter.org\">www.qter.org</a>"));
  #ifdef Q_OS_LINUX
     ui->portNameComboBox->addItem( "ttyUSB0");
     ui->portNameComboBox->addItem( "ttyUSB1");
@@ -46,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #endif
 
-    ui->statusBar->showMessage(tr("欢迎使用QCom串口调试助手!"));
+    ui->statusBar->showMessage(tr("欢迎使用Xlink MCU升级调试工具"));
 }
 
 MainWindow::~MainWindow()
@@ -73,12 +77,46 @@ void MainWindow::changeEvent(QEvent *e)
 }
 
 void MainWindow::startInit(){
+    //实例QDir
+    QDir *folder = new QDir;
+    //判断创建文件夹是否存在
+    bool exist = folder->exists("./McuBin");
+    if(exist)
+    {
+        //QMessageBox::warning(this,tr("创建文件夹"),tr("文件夹已经存在！"));
+    } 
+    else //如果不存在，创建文件夹
+    {
+        //创建文件夹
+        bool ok = folder->mkdir("./McuBin");
+        //判断是否成功
+        if(ok)
+        {
+            //QMessageBox::warning(this,tr("创建文件夹"),tr("文件夹创建成功！"));
+        } 
+        else
+        {
+            QMessageBox::warning(this,tr("创建文件夹"),tr("文件夹创建失败！"));
+        }
+    }
+
     setActionsEnabled(false);
     ui->delayspinBox->setEnabled(false);
-    ui->sendmsgBtn->setEnabled(false);
+    ui->sendmsgBtn->setEnabled(false);    
+    ui->checkDeviceButton->setEnabled(false);
+    ui->deviceRebootButton->setEnabled(false);
+    ui->mcuUpgradeButton->setEnabled(false);
+
     ui->sendMsgLineEdit->setEnabled(false);
+    ui->curVersionLineEdit->setEnabled(true);
+    ui->identifyLineEdit->setEnabled(true);
+    ui->PacketLenLineEdit->setEnabled(true);
     ui->obocheckBox->setEnabled(false);
     ui->actionAdd->setEnabled(true);
+
+    ui->identifyLineEdit->setText("1");
+    ui->curVersionLineEdit->setText("1");
+    ui->PacketLenLineEdit->setText("64");
 
     //初始化连续发送计时器计时间隔
     obotimerdly = OBO_TIMER_INTERVAL;
@@ -111,9 +149,37 @@ void MainWindow::setComboBoxEnabled(bool status)
 void MainWindow::on_actionOpen_triggered()
 {
     qDebug("init xlink ptp");
+    showString("init xlink ptp\r\n");
     if (Xlink_PTP_Init() != 0) {
 		qDebug("Xlink_PTP_Init error");
 	}
+    QString str;
+    bool ok;
+    str = ui->curVersionLineEdit->text();
+    mcuCurVersion = str.toInt(&ok, 10);
+    if(!ok){
+        QMessageBox::information(this, tr("提示消息"), tr("输入的当前版本数据格式有错误！"), QMessageBox::Ok);
+        return;
+    }
+    str = ui->identifyLineEdit->text();
+    mcuOtaIdentify = str.toInt(&ok, 10);
+    if(!ok){
+        QMessageBox::information(this, tr("提示消息"), tr("输入的标识符数据格式有错误！"), QMessageBox::Ok);
+        return;
+    }
+    str = ui->PacketLenLineEdit->text();
+    mcuOtaPktLength = str.toInt(&ok, 10);
+    if(!ok){
+        QMessageBox::information(this, tr("提示消息"), tr("输入的数据包长度数据格式有错误！"), QMessageBox::Ok);
+        return;
+    }
+    mcu_upgradeState = XLINK_MCU_UPGRADE_STATE_IDILE;
+    ui->upgradeProgressBar->setValue(0);  // 当前进度 
+   
+    QString s;
+    s.sprintf("mcuCurVersion:%d mcuOtaIdentify:%d mcuOtaPktLength:%d\r\n",mcuCurVersion,mcuOtaIdentify,mcuOtaPktLength);
+    qDebug("mcuCurVersion:%d mcuOtaIdentify:%d mcuOtaPktLength:%d",mcuCurVersion,mcuOtaIdentify,mcuOtaPktLength);
+    showString(s);
 
     QString portName = ui->portNameComboBox->currentText();   //获取串口名
 #ifdef Q_OS_LINUX
@@ -174,21 +240,23 @@ void MainWindow::on_actionOpen_triggered()
         QMessageBox::information(this, tr("打开成功"), tr("已成功打开串口") + portName, QMessageBox::Ok);
 		//界面控制
 		ui->sendmsgBtn->setEnabled(true);
+        ui->checkDeviceButton->setEnabled(true);
+        ui->deviceRebootButton->setEnabled(true);
+        ui->mcuUpgradeButton->setEnabled(true);
         setComboBoxEnabled(false);
-
         ui->sendMsgLineEdit->setEnabled(true);
-
-        ui->actionOpen->setEnabled(false);
         ui->sendMsgLineEdit->setFocus();
+        ui->curVersionLineEdit->setEnabled(false);
+        ui->identifyLineEdit->setEnabled(false);
+        ui->PacketLenLineEdit->setEnabled(false);
+        ui->actionOpen->setEnabled(false);
         ui->obocheckBox->setEnabled(true);
         ui->actionAdd->setEnabled(false);
-
         setActionsEnabled(true);
     }else{
         QMessageBox::critical(this, tr("打开失败"), tr("未能打开串口 ") + portName + tr("\n该串口设备不存在或已被占用"), QMessageBox::Ok);
         return;
     }
-
     ui->statusBar->showMessage(tr("打开串口成功"));
 }
 
@@ -201,16 +269,20 @@ void MainWindow::on_actionClose_triggered()
     myCom = NULL;
 
     ui->sendmsgBtn->setEnabled(false);
+    ui->checkDeviceButton->setEnabled(false);
+    ui->deviceRebootButton->setEnabled(false);
+    ui->mcuUpgradeButton->setEnabled(false);
 
     setComboBoxEnabled(true);
-
+    ui->curVersionLineEdit->setEnabled(true);
+    ui->identifyLineEdit->setEnabled(true);
+    ui->PacketLenLineEdit->setEnabled(true);
     ui->actionOpen->setEnabled(true);
     ui->sendMsgLineEdit->setEnabled(false);
+
     ui->obocheckBox->setEnabled(false);
     ui->actionAdd->setEnabled(true);
-
     setActionsEnabled(false);
-
     ui->actionWriteToFile->setChecked(false);
     ui->statusBar->showMessage(tr("串口已经关闭"));
 }
@@ -258,6 +330,141 @@ void MainWindow::on_clearUpBtn_clicked()
 {
     ui->textBrowser->clear();
     ui->statusBar->showMessage(tr("记录已经清空"));
+}
+
+void MainWindow::on_checkDeviceButton_clicked()
+{
+    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+    memset(&respack,'\0',sizeof(respack));
+    respack.en = 1;
+    respack.cmd = XLINK_PTR_CHECK_NET;
+    respack.datalen = 0;
+    respack.alldatalen = respack.datalen + 2;
+    respack.data = NULL;
+    qDebug("xlink mcu send check device state cmd 0x01");
+    showString("xlink mcu send check device state cmd 0x01\r\n");
+    Xlink_PassThroughProtolBuildSendData(&respack);
+}
+
+void MainWindow::on_deviceRebootButton_clicked()
+{
+    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+	memset(&respack,'\0',sizeof(respack));
+	respack.en = 1;
+	respack.cmd = XLINK_PTR_REBOOT_WIFI;
+	respack.alldatalen = 2;
+	respack.datalen = 0;
+	respack.data = NULL;
+    qDebug("xlink mcu send reboot device cmd 0x05");
+    showString("xlink mcu send reboot device cmd 0x05\r\n");
+	Xlink_PassThroughProtolBuildSendData(&respack);
+}
+
+void MainWindow::on_getPidPkeyButton_clicked()
+{
+    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+    memset(&respack,'\0',sizeof(respack));
+    respack.en = 1;
+    respack.cmd = XLINK_PTR_CHECK_PIDKEY;
+    respack.datalen = 0;
+    respack.alldatalen = respack.datalen + 2;
+    respack.data = NULL;
+    qDebug("xlink mcu send check device PidPkey cmd 0x02");
+    showString("xlink mcu send check device PidPkey cmd 0x02\r\n");
+    Xlink_PassThroughProtolBuildSendData(&respack);
+}
+
+void MainWindow::on_getWifiMACButton_clicked()
+{
+    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+    memset(&respack,'\0',sizeof(respack));
+    respack.en = 1;
+    respack.cmd = XLINK_PTR_CHECK_MAC;
+    respack.datalen = 0;
+    respack.alldatalen = respack.datalen + 2;
+    respack.data = NULL;
+    qDebug("xlink mcu send check device MAC cmd 0x00");
+    showString("xlink mcu send check device MAC cmd 0x00\r\n");
+    Xlink_PassThroughProtolBuildSendData(&respack);
+}
+
+
+void MainWindow::on_mcuUpgradeButton_clicked()
+{   
+    if(mcu_upgradeState == XLINK_MCU_UPGRADE_STATE_IDILE){
+        mcu_upgradeState = XLINK_MCU_SEND_CHECK_OTA_STATE;
+        mcuBinSize = 0;
+        ui->upgradeProgressBar->setValue(0);
+        memset(mcuBinMd5,0,sizeof(mcuBinMd5));
+        mcuBinOrderNumber = 0;
+        curMcuBinFileName.clear();
+        xlink_mcu_send_check_ota_cmd(mcuCurVersion,mcuOtaIdentify);
+    }else{
+       showString("Last upgrade is not finish!!!\r\n");
+    }
+}
+
+void MainWindow::xlink_mcu_send_check_ota_cmd(unsigned short version, unsigned int identify)
+{
+    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+    unsigned char Uart_SendBuf[7];
+    memset(&respack,'\0',sizeof(respack));
+    respack.en = 1;
+    respack.cmd = XLINK_PTR_CHECK_OTA;
+    Uart_SendBuf[0]=2;//任务类型 1 Wifi 2 MCU
+    Uart_SendBuf[1]=(version>>8) & 0xff;
+    Uart_SendBuf[2]=version & 0xff;
+    Uart_SendBuf[3]=(identify>>24) & 0xff;
+    Uart_SendBuf[4]=(identify>>16) & 0xff;
+    Uart_SendBuf[5]=(identify>>8) & 0xff;
+    Uart_SendBuf[6]=identify & 0xff;
+    respack.datalen = 7;
+    respack.data = Uart_SendBuf;
+    respack.alldatalen = 2 + respack.datalen;
+    qDebug("xlink mcu send check ota cmd 0x30");    
+    showString("xlink mcu send check ota cmd 0x30\r\n");
+    Xlink_PassThroughProtolBuildSendData(&respack);
+}
+
+void MainWindow::xlink_mcu_send_excute_ota_cmd(unsigned char packetLen)
+{
+    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+    unsigned char Uart_SendBuf[7];
+    memset(&respack,'\0',sizeof(respack));
+    respack.en = 1;
+    respack.cmd = XLINK_PTR_ASK_OTA;
+    Uart_SendBuf[0]=packetLen;
+    respack.datalen = 1;
+    respack.data = Uart_SendBuf;
+    respack.alldatalen = 2 + respack.datalen;
+    qDebug("xlink mcu send excute ota cmd 0x30");    
+    showString("xlink mcu send excute ota cmd 0x30\r\n");
+    mcu_upgradeState = XLINK_MCU_ASK_OTA_STATE;
+    Xlink_PassThroughProtolBuildSendData(&respack);
+}
+
+void MainWindow::xlink_mcu_send_finish_ota_cmd(unsigned short oldversion,unsigned short newversion, unsigned int identify)
+{
+    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+    unsigned char Uart_SendBuf[9];
+    memset(&respack,'\0',sizeof(respack));
+    respack.en = 1;
+    respack.cmd = XLINK_PTR_ANSWER_OTA;
+    Uart_SendBuf[0]=2;//任务类型 1 Wifi 2 MCU
+    Uart_SendBuf[1]=(identify>>24) & 0xff;
+    Uart_SendBuf[2]=(identify>>16) & 0xff;
+    Uart_SendBuf[3]=(identify>>8) & 0xff;
+    Uart_SendBuf[4]=identify & 0xff;
+    Uart_SendBuf[5]=(oldversion>>8) & 0xff;
+    Uart_SendBuf[6]=oldversion & 0xff;
+    Uart_SendBuf[7]=(newversion>>8) & 0xff;
+    Uart_SendBuf[8]=newversion & 0xff;
+    respack.datalen = 9;
+    respack.data = Uart_SendBuf;
+    respack.alldatalen = 2 + respack.datalen;
+    qDebug("xlink mcu send finish ota cmd 0x34");    
+    showString("xlink mcu send finish ota cmd 0x34\r\n");
+    Xlink_PassThroughProtolBuildSendData(&respack);
 }
 
 //计数器清零
@@ -377,7 +584,6 @@ void MainWindow::on_actionLoadfile_triggered()
     while(!file.atEnd()){
         line = file.readLine();
         ui->sendMsgLineEdit->setText(ui->sendMsgLineEdit->text() + tr(line));
-
     }
     file.close();
     ui->statusBar->showMessage(tr("已经成功读取文件中的数据"));
@@ -454,46 +660,69 @@ void MainWindow::sendMsg()
 //读取数据
 void MainWindow::readMyCom()
 {
-    QByteArray temp = myCom->readAll();
+    QByteArray temp;
     QString buf;
-
-    if(!temp.isEmpty()){
-
-        Xlink_PassThroughProtolPutData(&ptppkt, (unsigned char*)temp.data(), temp.length());
-
-        ui->textBrowser->setTextColor(Qt::black);
-        if(ui->ccradioButton->isChecked()){
-            buf = temp;
-        }else if(ui->chradioButton->isChecked()){
-            QString str;
+    forever{
+        temp = myCom->readAll();
+        if(!temp.isEmpty()){ 
+            buf = "rev: ";
             for(int i = 0; i < temp.count(); i++){
                 QString s;
-                s.sprintf("0x%02x, ", (unsigned char)temp.at(i));
+                s.sprintf("%02x, ", (unsigned char)temp.at(i));
                 buf += s;
             }
+            buf = buf + "\r\n";
+            qDebug("%s",buf.toStdString().data());
+            //showString(buf);
+            Xlink_PassThroughProtolPutData(&ptppkt, (unsigned char*)temp.data(), temp.length());
+        }else{
+            return;
         }
-
-        if(!write2fileName.isEmpty()){
-            QFile file(write2fileName);
-            //如果打开失败则给出提示并退出函数
-            if(!file.open(QFile::WriteOnly | QIODevice::Text)){
-                QMessageBox::warning(this, tr("写入文件"), tr("打开文件 %1 失败, 无法写入\n%2").arg(write2fileName).arg(file.errorString()), QMessageBox::Ok);
-                return;
-            }
-            QTextStream out(&file);
-            out<<buf;
-            file.close();
-        }
-
-        ui->textBrowser->setText(ui->textBrowser->document()->toPlainText() + buf);
-        QTextCursor cursor = ui->textBrowser->textCursor();
-        cursor.movePosition(QTextCursor::End);
-        ui->textBrowser->setTextCursor(cursor);
-
-        ui->recvbyteslcdNumber->display(ui->recvbyteslcdNumber->value() + temp.size());
-        ui->statusBar->showMessage(tr("成功读取%1字节数据").arg(temp.size()));
     }
 }
+
+//状态和数据显示
+void MainWindow::showString(QString buf)
+{
+    QDateTime current_time = QDateTime::currentDateTime(); 
+    //显示时间，格式为：年-月-日 时：分：秒 周几
+    QString StrCurrentTime = current_time.toString("yyyy-MM-dd hh:mm:ss  "); 
+    buf = StrCurrentTime + buf;
+    if(!write2fileName.isEmpty()){
+        QFile file(write2fileName);
+        //如果打开失败则给出提示并退出函数
+        if(!file.open(QFile::WriteOnly | QIODevice::Text)){
+            QMessageBox::warning(this, tr("写入文件"), tr("打开文件 %1 失败, 无法写入\n%2").arg(write2fileName).arg(file.errorString()), QMessageBox::Ok);
+            return;
+        }
+        QTextStream out(&file);
+        out<<buf;
+        file.close();
+    }
+
+    ui->textBrowser->setTextColor(Qt::black);
+    ui->textBrowser->setText(ui->textBrowser->document()->toPlainText() + buf);
+    QTextCursor cursor = ui->textBrowser->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    ui->textBrowser->setTextCursor(cursor);
+
+    ui->recvbyteslcdNumber->display(ui->recvbyteslcdNumber->value() + buf.length());
+    ui->statusBar->showMessage(tr("成功读取%1字节数据").arg(buf.length()));
+}
+
+void MainWindow::witePacketToBinFile(unsigned char *data, unsigned char data_len)
+{
+     if(curMcuBinFileName.isEmpty()){
+        showString("Error curMcuBinFileName is empty\r\n");
+        return;
+    }
+    QFile writeFile(curMcuBinFileName);
+    //存在打开，不存在创建
+    writeFile.open(QIODevice::WriteOnly | QIODevice::Append);
+    QDataStream out(&writeFile);
+    out.writeRawData((char *)data, data_len);
+    writeFile.close();
+} 
 
 int MainWindow::XlinkUartSend(QextSerialPort *myCom, unsigned char * Buffer, unsigned short BufferLen)
 {
@@ -520,14 +749,44 @@ void MainWindow::xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt)
 
 	switch(cmd_value){
 			case XLINK_PTR_CHECK_MAC:  //mcu check wifi mac
-                 //xlink_getmac_resp();
+            {
+                 QString buf;
+                 buf = "Device MAC: ";
+                 for(int i = 0; i < pkt->datalen; i++){
+                    QString s;
+                    s.sprintf("%02X", pkt->data[i]);
+                    buf += s;
+                 }
+                 buf = buf + "\r\n";
+                 showString(buf);
 				 break;
+            }
 			case XLINK_PTR_CHECK_NET:  //mcu check wifi net
-                 //xlink_getwifi_status_resp();
+            {
+                 QString s;
+                 s.sprintf("Network: %d , Server: %d\r\n",pkt->data[0],pkt->data[1]);
+                 showString(s);
 				 break;
+            }
 			case XLINK_PTR_CHECK_PIDKEY: //mcu check wifi pid and key
-                 //xlink_get_pidkey_resp();
+            {
+                 QString buf;
+                 buf = "PID: ";
+                 for(int i = 0; i < 32; i++){
+                    QString s;
+                    s.sprintf("%c", pkt->data[i]);
+                    buf += s;
+                 }
+                 buf = buf + " PKEY: ";
+                 for(int i = 0; i < 32; i++){
+                    QString s;
+                    s.sprintf("%c", pkt->data[i+32]);
+                    buf += s;
+                 }
+                 buf = buf + "\r\n\r\n";
+                 showString(buf);
 				 break;
+            }
 			case XLINK_PTR_SET_PIDKEY:  //mcu set wifi pid and key
                  //xlink_set_pidkey_resp(pkt);
 				 break;
@@ -536,7 +795,7 @@ void MainWindow::xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt)
 				 break;
 
 			case XLINK_PTR_REBOOT_WIFI:   //mcu reboot wifi
-                //xlink_reboot_wifi_resp();
+                showString("MCU get reboot cmd\r\n");
 				break;
 
 			case XLINK_PTR_REPASS_WIFI:  //mcu repass wifi
@@ -558,12 +817,10 @@ void MainWindow::xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt)
 				 break;
 			case XLINK_PTR_SET_SN:	//mcu set wifi sn
                 // xlink_set_sn_resp(pkt);
-				 break;
-
-			case XLINK_PTR_CHECK_APSTA_MODE: //mcu check wifi apsta mode and wifi strength
+			    break;
+		    case XLINK_PTR_CHECK_APSTA_MODE: //mcu check wifi apsta mode and wifi strength
                  //xlink_checkwifi_sta_or_ap_resp();
 				 break;
-
 			case XLINK_PTR_WIFI_TO_MCU_TRAN_T:
 				break;
 			case XLINK_PTR_MCU_TO_WIFI_TRAN_T:   //mcu transfer passthrough data to wifi
@@ -577,46 +834,140 @@ void MainWindow::xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt)
 			case XLINK_PTR_MCU_TO_WIFI_TRAN_ALLDP:  //mcu tranfer all datapoints data to wifi and for web refresh
                //xlink_mcu_to_wifi_alldp_process(pkt);
 				break;
-
 			case XLINK_PTR_MCU_TO_WIFI_TRAN_ALLDP_NO_ALARM:  //mcu transfer datapoints data to wifi
                 //xlink_mcu_to_wifi_no_alarm_dp_process(pkt);
 				break;
-
 			case XLINK_PTP_GET_MCU_VER:
                 //xlink_get_mcu_ver();
 				break;
-
 			case XLINK_PTP_SET_MCU_VER:
                 //xlink_set_mcu_ver(pkt);
 				break;
 
 			case XLINK_PTR_CHECK_OTA:  //mcu check whether new version ota bin or not.
 			{
-			    qDebug("get mcu uart cmd check ota 0x30\r\n");
-                //xlink_check_ota(pkt);
+                unsigned char status = pkt->data[0];//状态： 0 表示无升级任务，后面无数据； 1 表示有新升级任务，后跟新固件版本
+                mcuNewVersion = (pkt->data[1]<<8) + pkt->data[2];
+			    qDebug("get wifi response check ota cmd 0x30\r\n");            
+                QString s;
+                s.sprintf("get wifi response check ota cmd 0x30, status:%d mcuNewVersion:%d\r\n",status,mcuNewVersion);
+                showString(s);
+                if(status==1){
+                    showString("Has a mcu upgrade task\r\n");
+                    xlink_mcu_send_excute_ota_cmd(mcuOtaPktLength);
+                    QString s;
+                    s.sprintf("version%d_",mcuNewVersion);
+                    QDateTime current_time = QDateTime::currentDateTime(); 
+                    s = s + current_time.toString("yyyyMMdd_hhmmss.bin"); 
+                    curMcuBinFileName = "./McuBin/" + s;
+                    showString("curMcuBinFileName = " + curMcuBinFileName + "\r\n");
+                }else{
+                    showString("No mcu upgrade task\r\n");
+                    mcu_upgradeState = XLINK_MCU_UPGRADE_STATE_IDILE;
+                    ui->upgradeProgressBar->setValue(0);  // 当前进度 
+                }
                 break;
 			}
 			case XLINK_PTR_ASK_OTA:  //mcu ask wifi for excuting an ota task
             {
-                qDebug("get mcu uart cmd ask wifi ota 0x31\r\n");
-                //xlink_ask_ota(pkt);
+                unsigned char status = pkt->data[0];//状态： 0 表示升级任务失败； 1 表示开始升级
+                qDebug("get wifi response excute ota cmd 0x31\r\n");
+                showString("get wifi response excute ota cmd 0x31\r\n");
+                if(status==1){
+                    showString("Upgrading ... ...\r\n");
+                    mcu_upgradeState = XLINK_WIFI_SEND_OTA_STATE;
+                }else{
+                    showString("get wifi status upgrade failed\r\n");
+                     mcu_upgradeState = XLINK_MCU_UPGRADE_STATE_IDILE;
+                     ui->upgradeProgressBar->setValue(0);  // 当前进度 
+                }
                 break;
 			}
 			case XLINK_PTR_HF_SEND_OTA: //wifi send the ota bin to mcu
 			{
-                qDebug("get mcu uart cmd send the ota bin to mcu 0x32\r\n");
-               // xlink_send_ota_bin(pkt);
+                unsigned short orderNumber;// mcuBinOrderNumber
+                unsigned char dataLen ;
+                qDebug("get wifi send ota bin cmd 0x32\r\n");
+              
+                orderNumber = (pkt->data[0]<<8) + pkt->data[1];
+                dataLen = pkt->data[2];
+                if(pkt->datalen == dataLen+3){//包长度正常
+                    //NULL
+                }else{
+                    QString s;
+                    s.sprintf("upgrade failed, packet length error dataLen=%d pkt->datalen=%d\r\n",dataLen,pkt->datalen);
+                    showString(s);
+                    mcu_upgradeState = XLINK_MCU_UPGRADE_STATE_IDILE;
+                    break;
+                }
+                if(orderNumber == mcuBinOrderNumber + 1 || orderNumber == mcuBinOrderNumber) {//包序号正常
+                    if(orderNumber == mcuBinOrderNumber + 1){
+                        //写文件
+                        witePacketToBinFile(&pkt->data[3], dataLen);
+                        ui->upgradeProgressBar->setValue(orderNumber);  // 当前进度 
+                    }
+                    mcuBinOrderNumber = orderNumber;
+                }else{
+                    QString s;
+                    s.sprintf("upgrade failed, order number error orderNumber=%d mcuBinOrderNumber=%d\r\n",orderNumber,mcuBinOrderNumber);
+                    showString(s);
+                    mcu_upgradeState = XLINK_MCU_UPGRADE_STATE_IDILE;
+                    break;
+                }
+
+               {//response
+                    XLINK_PASSTHROUGHPROTOCOLPACKET respack;
+                    unsigned char Uart_SendBuf[7];
+                    memset(&respack,'\0',sizeof(respack));
+                    respack.en = 1;
+                    respack.cmd = XLINK_PTR_HF_SEND_OTA;
+                    Uart_SendBuf[0]=pkt->data[0];
+                    Uart_SendBuf[1]=pkt->data[1];
+                    respack.datalen = 2;
+                    respack.data = Uart_SendBuf;
+                    respack.alldatalen = 2 + respack.datalen;
+                    qDebug("xlink mcu response send ota bin cmd 0x32");    
+                    //showString("xlink mcu response send ota bin cmd 0x32\r\n");
+                    Xlink_PassThroughProtolBuildSendData(&respack);
+                }
 				break;
 			 }
 			case XLINK_PTR_Finish_OTA:	//wifi finish send the ota bin
 			{
-				qDebug("get mcu uart cmd response wifi finish send ota bin 0x33\r\n");
-                //xlink_finish_ota_bin();
+				qDebug("get wifi finish send ota bin cmd 0x33\r\n");
+                mcu_upgradeState = XLINK_WIFI_SEND_FINISH_OTA_STATE;
+
+                mcuBinSize = (pkt->data[0]<<24) + (pkt->data[1]<<16) + (pkt->data[2]<<8) + pkt->data[3];
+                memcpy(mcuBinMd5, &pkt->data[4], 16);
+                QString resultMd5 = fileMd5(curMcuBinFileName);
+                QString binMd5;
+                for(int i = 0; i < 16; i++){
+                    QString s;
+                    s.sprintf("%02x", mcuBinMd5[i]);
+                    binMd5 += s;
+                }
+                showString("get mcu bin Md5:  "+ binMd5+"\r\n");  
+                showString("download bin Md5: "+ resultMd5+"\r\n");  
+                if(binMd5 == resultMd5){
+                    xlink_mcu_send_finish_ota_cmd(mcuCurVersion,mcuNewVersion,mcuNewVersion);
+                }else{
+                    showString("MD5 error!!!\r\n");
+                    mcu_upgradeState = XLINK_MCU_UPGRADE_STATE_IDILE;
+                }
 				break;
 			}
 			case XLINK_PTR_ANSWER_OTA: // MCU tell wifi the ota result
 			{
-			    qDebug("get mcu uart cmd the ota task 0x34\r\n");
+                unsigned char status = pkt->data[0];//状态： 0 表示上报失败； 1 表示上报成功。
+			    qDebug("get wifi response finish ota cmd 0x34\r\n");
+                showString("get wifi response finish ota cmd 0x34\r\n");
+                if(status == 1){
+                    showString("Mcu ota sucessed\r\n");
+                    ui->upgradeProgressBar->setValue(1000);  // 当前进度 
+                }else{
+                    showString("Mcu ota failed\r\n");
+                }
+                mcu_upgradeState = XLINK_MCU_UPGRADE_STATE_IDILE;
 				break;
 			}
 
@@ -643,7 +994,6 @@ void MainWindow::xlink_PacketCallBack(XLINK_PASSTHROUGHPROTOCOLPACKET *pkt)
 
 int MainWindow::Xlink_PassThroughProtolInit(XLINK_PASSTHROUGHPROTOCOL *PTP_pck)
 {
-	if(PTP_pck->PacketCallBack == NULL)return -1;
 	if(PTP_pck->pktbuf == NULL)return -2;
 	if(PTP_pck->pktbuflen < 7)return -3;
 	PTP_pck->pktpos = 0;
@@ -657,7 +1007,7 @@ int MainWindow::Xlink_PTP_Init(void)
 	ptppkt.pktbuf		= xlink_pktbuf;
 	ptppkt.pktbuflen	= PACKAGE_BUF_LEN;
 	ptppkt.pktpos		= 0;
-    ptppkt.PacketCallBack = xlink_PacketCallBack;
+    ptppkt.PacketCallBack = 0;
 
 	return Xlink_PassThroughProtolInit(&ptppkt);
 }
@@ -700,7 +1050,7 @@ void MainWindow::Xlink_PassThroughProtolPutData(XLINK_PASSTHROUGHPROTOCOL *PTP_p
 						}
 						if(PTP_pck->pktbuf[PTP_pck->pktpos -1] == Xlink_PassThroughProtolBuildXor(0,&PTP_pck->pktbuf[1],PTP_pck->pktpos -2)) {
 							PTP_pck->pkt->en = 1;
-							PTP_pck->PacketCallBack(PTP_pck->pkt);
+							xlink_PacketCallBack(PTP_pck->pkt);
 						}
 					}
 				}
@@ -832,6 +1182,38 @@ unsigned char MainWindow::Xlink_PassThroughProtolBuildXor(unsigned char resold,u
 	return res;
 }
 
+QString MainWindow::fileMd5(const QString &sourceFilePath)
+{
+    QFile sourceFile(sourceFilePath);
+    qint64 fileSize = sourceFile.size();
+    showString("Get bin file MD5\r\n");
+    QString s;
+    s.sprintf(" size = %d, get bin size = %d\r\n",fileSize, mcuBinSize);
+    s = sourceFilePath + s;
+    showString(s);
+    fileSize = qMin((qint64)mcuBinSize,fileSize);
+    const qint64 bufferSize = 10240;
 
+    if (sourceFile.open(QIODevice::ReadOnly)) {
+        char buffer[bufferSize];
+        int bytesRead;
+        int readSize = qMin(fileSize, bufferSize);
 
+        QCryptographicHash hash(QCryptographicHash::Md5);
 
+        while (readSize > 0 && (bytesRead = sourceFile.read(buffer, readSize)) > 0) {
+            fileSize -= bytesRead;
+            hash.addData(buffer, bytesRead);
+            readSize = qMin(fileSize, bufferSize);
+        }
+
+        sourceFile.close();
+        return QString(hash.result().toHex());
+    }
+    return QString();
+}
+
+void MainWindow::on_upgradeProgressBar_valueChanged(int value)
+{
+
+}

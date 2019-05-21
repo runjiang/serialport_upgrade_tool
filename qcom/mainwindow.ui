@@ -63,6 +63,237 @@ QLCDNumber{background:url(:/images/lcd.bmp)}
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="1">
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="title">
+       <string>接收数据</string>
+      </property>
+      <property name="flat">
+       <bool>true</bool>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QFrame" name="frame_3">
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::WinPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <property name="lineWidth">
+          <number>1</number>
+         </property>
+         <property name="midLineWidth">
+          <number>0</number>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>                                                            显示字节数</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLCDNumber" name="recvbyteslcdNumber">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>已接收字节数</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true"/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="clearUpBtn">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>清空显示</string>
+            </property>
+            <property name="icon">
+             <iconset resource="images.qrc">
+              <normaloff>:/images/edit-clear.png</normaloff>:/images/edit-clear.png</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextBrowser" name="textBrowser"/>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="title">
+          <string>发送数据</string>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>              当前版本</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="5">
+           <widget class="QPushButton" name="deviceRebootButton">
+            <property name="text">
+             <string>重启设备</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="6" colspan="2">
+           <widget class="QLineEdit" name="PacketLenLineEdit"/>
+          </item>
+          <item row="4" column="2">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>           标识符</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="5">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>     数据包长度</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QPushButton" name="checkDeviceButton">
+            <property name="text">
+             <string>检测设备</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="10">
+           <widget class="QPushButton" name="sendmsgBtn">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>23</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>发送</string>
+            </property>
+            <property name="icon">
+             <iconset resource="images.qrc">
+              <normaloff>:/images/send.png</normaloff>:/images/send.png</iconset>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
+            <property name="default">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLineEdit" name="identifyLineEdit"/>
+          </item>
+          <item row="0" column="1" colspan="6">
+           <widget class="QLineEdit" name="sendMsgLineEdit">
+            <property name="maxLength">
+             <number>10000</number>
+            </property>
+            <property name="dragEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="10">
+           <widget class="QPushButton" name="mcuUpgradeButton">
+            <property name="text">
+             <string>一键升级</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="2" colspan="2">
+           <widget class="QPushButton" name="getWifiMACButton">
+            <property name="text">
+             <string>Get MAC</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="sendAsHexcheckBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;以十六进制方式发送数据（默认为字符方式）&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>十六进制发送</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="curVersionLineEdit"/>
+          </item>
+          <item row="6" column="4">
+           <widget class="QPushButton" name="getPidPkeyButton">
+            <property name="text">
+             <string>Get PidPkey</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" colspan="7">
+           <widget class="QProgressBar" name="upgradeProgressBar">
+            <property name="maximum">
+             <number>1000</number>
+            </property>
+            <property name="value">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>             升级进度</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
     <item row="0" column="0" rowspan="2">
      <widget class="QGroupBox" name="groupBox">
       <property name="styleSheet">
@@ -106,8 +337,11 @@ QLCDNumber{background:url(:/images/lcd.bmp)}
        </item>
        <item>
         <widget class="QComboBox" name="baudRateComboBox">
+         <property name="currentText">
+          <string>115200</string>
+         </property>
          <property name="currentIndex">
-          <number>12</number>
+          <number>19</number>
          </property>
          <item>
           <property name="text">
@@ -372,315 +606,6 @@ QLCDNumber{background:url(:/images/lcd.bmp)}
          <property name="value">
           <number>200</number>
          </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="2" column="0" colspan="2">
-     <widget class="QGroupBox" name="groupBox_3">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>60</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>60</height>
-       </size>
-      </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="title">
-       <string/>
-      </property>
-      <property name="flat">
-       <bool>true</bool>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <property name="spacing">
-        <number>7</number>
-       </property>
-       <property name="bottomMargin">
-        <number>1</number>
-       </property>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>258</width>
-           <height>19</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_7">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="pixmap">
-          <pixmap resource="images.qrc">:/images/logo42-22.png</pixmap>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="qter">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="toolTip">
-          <string>欢迎访问我们的网站</string>
-         </property>
-         <property name="statusTip">
-          <string>欢迎访问我们的网站</string>
-         </property>
-         <property name="text">
-          <string>www.qter.org</string>
-         </property>
-         <property name="openExternalLinks">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>258</width>
-           <height>19</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QGroupBox" name="groupBox_2">
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="title">
-       <string>接收数据</string>
-      </property>
-      <property name="flat">
-       <bool>true</bool>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QFrame" name="frame_3">
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::WinPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
-         </property>
-         <property name="lineWidth">
-          <number>1</number>
-         </property>
-         <property name="midLineWidth">
-          <number>0</number>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QRadioButton" name="ccradioButton">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;以字符方式显示数据&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>字符形式显示</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="chradioButton">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;以十六进制方式显示数据&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>十六进制形式显示</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLCDNumber" name="recvbyteslcdNumber">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="toolTip">
-             <string>已接收字节数</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="clearUpBtn">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>23</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>23</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>清空显示</string>
-            </property>
-            <property name="icon">
-             <iconset resource="images.qrc">
-              <normaloff>:/images/edit-clear.png</normaloff>:/images/edit-clear.png</iconset>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTextBrowser" name="textBrowser"/>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="groupBox_4">
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="title">
-          <string>发送数据</string>
-         </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="1">
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>  当前版本</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>    标识符</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="8">
-           <widget class="QPushButton" name="pushButton">
-            <property name="text">
-             <string>检测设备</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="6">
-           <widget class="QLabel" name="label_10">
-            <property name="text">
-             <string>   数据包长度</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="7">
-           <widget class="QLineEdit" name="sendMsgLineEdit">
-            <property name="maxLength">
-             <number>10000</number>
-            </property>
-            <property name="dragEnabled">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="8">
-           <widget class="QPushButton" name="sendmsgBtn">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>23</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>23</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>发送</string>
-            </property>
-            <property name="icon">
-             <iconset resource="images.qrc">
-              <normaloff>:/images/send.png</normaloff>:/images/send.png</iconset>
-            </property>
-            <property name="autoDefault">
-             <bool>false</bool>
-            </property>
-            <property name="default">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="sendAsHexcheckBox">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;以十六进制方式发送数据（默认为字符方式）&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>十六进制发送</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLineEdit" name="lineEdit_2"/>
-          </item>
-          <item row="2" column="2">
-           <widget class="QLineEdit" name="lineEdit"/>
-          </item>
-          <item row="3" column="8">
-           <widget class="QPushButton" name="pushButton_2">
-            <property name="text">
-             <string>重启设备</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </widget>
        </item>
       </layout>

@@ -50,7 +50,7 @@
     <string notr="true">font: 16pt &quot;Arial Black&quot;;</string>
    </property>
    <property name="text">
-    <string>MCU升级调试工具（版本：1.1）</string>
+    <string>Xlink MCU升级调试工具（版本：1.1）</string>
    </property>
   </widget>
   <widget class="QPushButton" name="closeBtn">
